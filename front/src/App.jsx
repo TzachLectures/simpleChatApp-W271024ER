@@ -10,28 +10,38 @@ import ChatMessage from "./ChatMessage";
 import { io } from "socket.io-client";
 import { useState } from "react";
 import { useEffect } from "react";
-
+import { v4 as uuidv4 } from "uuid";
 const socket = io("http://localhost:8181");
 
 export default function App() {
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
-  const [userName, setUserName] = useState("");
+  const [userName, setUserName] = useState(
+    sessionStorage.getItem("userName") ?? ""
+  );
+  const [allUsers, setAllUsers] = useState({});
 
   useEffect(() => {
     socket.on("message recived", (data) => setMessages(data));
+    socket.on("userName change recived", (data) => setAllUsers(data));
   }, [socket]);
+
+  useEffect(() => {
+    socket.emit("userName changed", userName);
+  }, [userName]);
 
   const sendMessage = () => {
     if (!message) return;
 
     const msgObj = {
+      id: uuidv4(),
       text: message,
       sender: userName || "Anonymus",
       time: new Date(),
     };
 
     socket.emit("message sent", msgObj);
+    setMessage("");
   };
 
   return (
@@ -46,6 +56,12 @@ export default function App() {
         direction: "rtl",
       }}
     >
+      {Object.values(allUsers).map((u) => (
+        <>
+          <div key={u}>{u}</div>
+          <br></br>
+        </>
+      ))}{" "}
       <Box sx={{ width: "100%" }}>
         {/* Chat shell */}
         <Paper
@@ -80,6 +96,7 @@ export default function App() {
           >
             {messages.map((msg) => (
               <ChatMessage
+                key={msg.id}
                 message={msg}
                 isItMyMessage={msg.sender === userName}
               />
@@ -110,8 +127,11 @@ export default function App() {
                   borderBottomRightRadius: 0,
                 },
               }}
-              inputProps={{ style: { paddingTop: 14, paddingBottom: 14 } }}
+              value={message}
               onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") sendMessage();
+              }}
             />
             <Button
               variant="contained"
@@ -143,7 +163,11 @@ export default function App() {
             sx={{
               "& .MuiOutlinedInput-root": { borderRadius: 12 },
             }}
-            onChange={(e) => setUserName(e.target.value)}
+            value={userName}
+            onChange={(e) => {
+              setUserName(e.target.value);
+              sessionStorage.setItem("userName", e.target.value);
+            }}
           />
         </Box>
       </Box>

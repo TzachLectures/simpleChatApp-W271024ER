@@ -5,10 +5,11 @@ export default function ChatMessage({ message, isItMyMessage }) {
   const { sender, time, text } = message;
 
   // פורמט זמן קצר אם הגיע Date
-  const timeLabel =
-    time instanceof Date
-      ? time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-      : time;
+
+  const timeLabel = new Date(time).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
   // צד, צבעים ופינות לפי מקור ההודעה
   const side = isItMyMessage ? "flex-start" : "flex-end"; // ירוק משמאל כמו באפיון
@@ -37,6 +38,8 @@ export default function ChatMessage({ message, isItMyMessage }) {
           px: 2,
           py: 1.5,
           maxWidth: { xs: "82%", sm: "70%" },
+          minWidth: "10%",
+          minHeight: "50px",
           borderRadius: radius,
           position: "relative",
         }}
